@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Ukens program — Selskapet</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600&family=Inter:wght@400;500;600&display=swap');
+
+  :root {
+    --cream:       #FAF7F2;
+    --navy:        #1A2E4A;
+    --navy-mid:    #2C4A6E;
+    --blue:        #3B7DD8;
+    --blue-light:  #EBF3FF;
+    --gold:        #E8A020;
+    --gold-light:  #FEF6E4;
+    --green:       #2A7A4B;
+    --green-light: #E8F5EE;
+    --red:         #C0392B;
+    --red-light:   #FDECEA;
+    --red-dark:    #962d22;
+    --purple:      #5B4FCF;
+    --purple-light:#EDEAFC;
+    --muted:       #8A96A8;
+    --border:      #E2D9CC;
+    --white:       #FFFFFF;
+    --today-glow:  rgba(59,125,216,0.13);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--cream);
+    font-family: 'Inter', sans-serif;
+    color: var(--navy);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+
+  /* ── PAGE LAYOUT ── */
+  .page {
+    height: 100vh;
+    display: grid;
+    grid-template-rows: auto auto 1fr auto;
+    padding: 20px 28px 14px;
+    gap: 0;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding-bottom: 16px;
+    border-bottom: 1.5px solid var(--border);
+    margin-bottom: 16px;
+  }
+
+  .header-greeting {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .header-greeting-text {
+    font-family: 'Lora', serif;
+    font-size: 36px;
+    font-weight: 600;
+    color: var(--navy);
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+  }
+  .header-greeting-text .name { color: var(--blue); }
+  .header-greeting-sub {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .header-right {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+  }
+
+  /* Bluetooth pill in header */
+  .bt-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--purple-light);
+    border: 1.5px solid var(--purple);
+    border-radius: 12px;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    user-select: none;
+  }
+  .bt-pill:active { transform: scale(0.97); }
+  .bt-pill.connected {
+    background: var(--green-light);
+    border-color: var(--green);
+  }
+  .bt-icon { font-size: 18px; line-height: 1; }
+  .bt-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--purple);
+    line-height: 1.2;
+  }
+  .bt-pill.connected .bt-label { color: var(--green); }
+  .bt-sub {
+    font-size: 11px;
+    color: var(--muted);
+    display: block;
+    margin-top: 1px;
+  }
+  .bt-pill.connected .bt-sub { color: var(--green); opacity: 0.8; }
+
+  .date-block { text-align: right; }
+  .date-day {
+    font-family: 'Lora', serif;
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--navy);
+    line-height: 1;
+    letter-spacing: -0.5px;
+  }
+
+  /* ── TODAY BANNER ── */
+  .today-banner {
+    background: var(--blue);
+    border-radius: 14px;
+    padding: 15px 22px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 4px 20px rgba(59,125,216,0.22);
+  }
+  .today-banner.none { background: var(--green); box-shadow: 0 4px 20px rgba(42,122,75,0.18); }
+
+  .today-icon { font-size: 30px; flex-shrink: 0; line-height: 1; }
+  .today-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.65);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 2px;
+  }
+  .today-title {
+    font-family: 'Lora', serif;
+    font-size: 21px;
+    font-weight: 600;
+    color: #fff;
+    line-height: 1.2;
+  }
+  .today-time { font-size: 14px; color: rgba(255,255,255,0.78); margin-top: 2px; }
+
+  /* ── MAIN BODY: schedule + utility buttons ── */
+  .body-row {
+    display: grid;
+    grid-template-columns: 1fr 200px;
+    gap: 14px;
+    align-items: start;
+    min-height: 0;
+  }
+
+  /* ── SCHEDULE ── */
+  .schedule {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+
+  .session-card {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .session-card.is-today {
+    border-color: var(--blue);
+    background: var(--blue-light);
+    box-shadow: 0 0 0 3px var(--today-glow), 0 4px 14px rgba(59,125,216,0.1);
+  }
+  .session-card.is-past { opacity: 0.52; }
+  .session-card.is-next { border-color: var(--gold); background: var(--gold-light); }
+
+  .card-day {
+    font-size: 10px; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.07em;
+  }
+  .session-card.is-today .card-day { color: var(--blue); }
+  .session-card.is-next  .card-day { color: var(--gold); }
+
+  .card-icon { font-size: 28px; line-height: 1; }
+  .card-title {
+    font-family: 'Lora', serif;
+    font-size: 16px; font-weight: 600;
+    color: var(--navy); line-height: 1.25;
+  }
+  .card-time { font-size: 13px; color: var(--navy-mid); font-weight: 500; }
+  .card-desc { font-size: 12px; color: var(--muted); line-height: 1.5; flex: 1; }
+  .card-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; font-weight: 600;
+    padding: 3px 9px; border-radius: 20px; align-self: flex-start;
+  }
+  .badge-today { background: var(--blue); color: #fff; }
+  .badge-next  { background: var(--gold); color: #fff; }
+  .badge-done  { background: #E8EDF3; color: var(--muted); }
+
+  /* ── UTILITY SIDEBAR ── */
+  .utility-col {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* Bluetooth card */
+  .bt-card {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 14px;
+    cursor: pointer;
+    user-select: none;
+    transition: border-color 0.15s, transform 0.1s;
+  }
+  .bt-card:active { transform: scale(0.97); }
+  .bt-card.searching { border-color: var(--purple); background: var(--purple-light); }
+  .bt-card.bt-connected { border-color: var(--green); background: var(--green-light); }
+
+  .bt-card-icon { font-size: 36px; line-height: 1; margin-bottom: 8px; }
+  .bt-card-title {
+    font-family: 'Lora', serif;
+    font-size: 16px; font-weight: 600;
+    color: var(--navy); margin-bottom: 4px;
+  }
+  .bt-card-sub { font-size: 12px; color: var(--muted); line-height: 1.45; }
+  .bt-card.searching .bt-card-sub { color: var(--purple); }
+  .bt-card.bt-connected .bt-card-sub { color: var(--green); font-weight: 500; }
+
+  /* Scanning animation dots */
+  .scan-dots { display: none; }
+  .bt-card.searching .scan-dots { display: inline; }
+  @keyframes dot-blink {
+    0%,80%,100% { opacity: 0; }
+    40%          { opacity: 1; }
+  }
+  .scan-dots span { animation: dot-blink 1.4s infinite; font-size: 18px; color: var(--purple); }
+  .scan-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .scan-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  /* ── EMERGENCY BUTTON CARD ── */
+  .sos-card {
+    background: var(--red-light);
+    border: 2px solid var(--red);
+    border-radius: 14px;
+    padding: 16px 14px;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.1s;
+    flex: 1;
+  }
+  .sos-card:active { transform: scale(0.97); }
+
+  .sos-icon { font-size: 36px; line-height: 1; margin-bottom: 8px; }
+  .sos-title {
+    font-family: 'Lora', serif;
+    font-size: 18px; font-weight: 600;
+    color: var(--red); margin-bottom: 4px;
+  }
+  .sos-sub { font-size: 12px; color: #8B3A33; line-height: 1.45; }
+
+  /* ── EMERGENCY OVERLAY ── */
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgba(0,0,0,0.55);
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+  }
+  .overlay.active { display: flex; }
+
+  .modal {
+    background: var(--white);
+    border-radius: 24px;
+    padding: 36px 32px 28px;
+    max-width: 420px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  }
+
+  .modal-icon { font-size: 56px; line-height: 1; margin-bottom: 16px; }
+  .modal-title {
+    font-family: 'Lora', serif;
+    font-size: 26px; font-weight: 600;
+    color: var(--navy); margin-bottom: 10px; line-height: 1.2;
+  }
+  .modal-body {
+    font-size: 16px; color: var(--muted);
+    line-height: 1.6; margin-bottom: 28px;
+  }
+
+  .modal-confirm {
+    width: 100%;
+    background: var(--red);
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    font-size: 20px;
+    font-weight: 600;
+    font-family: 'Lora', serif;
+    padding: 18px;
+    cursor: pointer;
+    margin-bottom: 12px;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .modal-confirm:active { background: var(--red-dark); transform: scale(0.98); }
+
+  .modal-cancel {
+    width: 100%;
+    background: #E8EDF3;
+    color: var(--muted);
+    border: none;
+    border-radius: 14px;
+    font-size: 17px;
+    font-weight: 500;
+    padding: 15px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .modal-cancel:active { background: #d4dae3; }
+
+  /* Sending state */
+  .modal.sending .modal-title { color: var(--red); }
+  .modal.sent .modal-icon::after { content: '✅'; font-size: 56px; }
+
+  /* countdown ring */
+  .countdown-wrap {
+    display: none;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  .modal.confirm-stage .countdown-wrap { display: flex; }
+  .countdown-ring {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: conic-gradient(var(--red) 0%, #fde8e6 0%);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    transition: background 1s linear;
+  }
+  .countdown-ring::before {
+    content: '';
+    position: absolute;
+    width: 54px; height: 54px;
+    background: #fff;
+    border-radius: 50%;
+  }
+  .countdown-num {
+    position: relative; z-index: 1;
+    font-family: 'Lora', serif;
+    font-size: 24px; font-weight: 600;
+    color: var(--red);
+  }
+
+  /* ── FOOTER ── */
+  .footer {
+    padding-top: 10px;
+    border-top: 1.5px solid var(--border);
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .help-text { font-size: 13px; color: var(--muted); }
+  .help-text strong { color: var(--navy); font-weight: 600; }
+  .clock {
+    font-family: 'Lora', serif;
+    font-size: 48px; font-weight: 600;
+    color: var(--navy); letter-spacing: -2px;
+    line-height: 1;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .body-row { grid-template-columns: 1fr; }
+    .utility-col { flex-direction: row; }
+    .bt-card, .sos-card { flex: 1; }
+    .schedule { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 540px) {
+    .page { padding: 14px 14px 12px; }
+    .schedule { gap: 8px; }
+    .session-card { padding: 12px 10px; }
+    .card-title { font-size: 14px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .scan-dots span { animation: none; opacity: 1; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-greeting">
+      <div class="header-greeting-text" id="js-greeting"></div>
+      <div class="header-greeting-sub" id="js-date"></div>
+    </div>
+    <div class="header-right">
+      <div class="date-block">
+        <div class="date-day" id="js-day"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- TODAY BANNER -->
+  <div id="js-banner" class="today-banner">
+    <div class="today-icon" id="js-banner-icon"></div>
+    <div class="today-content">
+      <div class="today-label" id="js-banner-label"></div>
+      <div class="today-title" id="js-banner-title"></div>
+      <div class="today-time"  id="js-banner-time"></div>
+    </div>
+  </div>
+
+  <!-- BODY ROW: schedule + utility sidebar -->
+  <div class="body-row">
+
+    <div class="schedule" id="js-schedule"></div>
+
+    <!-- UTILITY SIDEBAR -->
+    <div class="utility-col">
+
+      <!-- BLUETOOTH / HEARING AID CARD -->
+      <div class="bt-card" id="js-bt-card" onclick="handleBluetooth()" role="button" aria-label="Koble til høreapparat eller headset">
+        <div class="bt-card-icon">🦻</div>
+        <div class="bt-card-title">Høreapparat</div>
+        <div class="bt-card-sub" id="js-bt-sub">
+          Trykk for å koble til<br>via Bluetooth
+        </div>
+        <div class="scan-dots" aria-hidden="true">
+          <span>•</span><span>•</span><span>•</span>
+        </div>
+      </div>
+
+      <!-- EMERGENCY BUTTON -->
+      <div class="sos-card" id="js-sos-card" onclick="showSosModal()" role="button" aria-label="Nødknapp">
+        <div class="sos-icon">🆘</div>
+        <div class="sos-title">Nødknapp</div>
+        <div class="sos-sub">Trykk om du trenger<br>hjelp nå</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="help-text">Trenger du hjelp? Ring oss: <strong>400 00 000</strong></div>
+    <div class="clock" id="js-clock"></div>
+  </footer>
+
+</div>
+
+<!-- ── EMERGENCY MODAL OVERLAY ── -->
+<div class="overlay" id="js-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div class="modal" id="js-modal">
+
+    <!-- STAGE 1: confirm -->
+    <div id="js-modal-stage-confirm">
+      <div class="modal-icon">🆘</div>
+      <div class="countdown-wrap">
+        <div class="countdown-ring" id="js-ring">
+          <span class="countdown-num" id="js-countdown">5</span>
+        </div>
+      </div>
+      <div class="modal-title" id="modal-title">Trenger du hjelp?</div>
+      <div class="modal-body">
+        Hold inne knappen for å varsle familien og Selskapet.<br><br>
+        Er dette en feil? Trykk <strong>Avbryt</strong>.
+      </div>
+      <button class="modal-confirm" id="js-sos-confirm" onclick="startSosCountdown()">
+        Ja, send hjelp
+      </button>
+      <button class="modal-cancel" onclick="closeSosModal()">Avbryt — alt er bra</button>
+    </div>
+
+    <!-- STAGE 2: sending -->
+    <div id="js-modal-stage-sending" style="display:none">
+      <div class="modal-icon">📡</div>
+      <div class="modal-title" style="color:var(--red)">Varsler familien…</div>
+      <div class="modal-body">Vi ringer familien og sender en melding til Selskapet. Hold deg rolig — hjelp er på vei.</div>
+      <button class="modal-cancel" onclick="closeSosModal()" style="margin-top:8px">Avbryt allikevel</button>
+    </div>
+
+    <!-- STAGE 3: sent confirmation -->
+    <div id="js-modal-stage-sent" style="display:none">
+      <div class="modal-icon">✅</div>
+      <div class="modal-title" style="color:var(--green)">Varselet er sendt!</div>
+      <div class="modal-body">
+        Familien er varslet og en melding er sendt til Selskapet.<br><br>
+        Noen vil ta kontakt med deg snart. Du er ikke alene.
+      </div>
+      <button class="modal-cancel" onclick="closeSosModal()" style="background:var(--green-light);color:var(--green)">OK — takk</button>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+// CONFIGURATION — edit these
+// ═══════════════════════════════════════════════════════════════════════════
+
+const SESSIONS = [
+  { day:2, hour:10, minute:0,  title:"Morgenkaffe",     desc:"En hyggelig start på dagen med kjente ansikter og god prat.", icon:"☕" },
+  { day:3, hour:18, minute:0,  title:"Quizkveld",        desc:"Musikk, geografi og minner — hvem vet mest i gruppen?",        icon:"🧩" },
+  { day:4, hour:14, minute:0,  title:"Musikkstund",      desc:"Favorittlåter fra 60- og 70-tallet, sang og gode minner.",     icon:"🎵" },
+  { day:5, hour:14, minute:0,  title:"Filmkveld og prat",desc:"Vi ser en kort film eller klipp og snakker om det etterpå.",   icon:"🎬" },
+];
+
+// Emergency contacts — TBC: replace with real webhook/SMS API when ready
+const EMERGENCY_CONTACTS = [
+  { name: "Kristoffer (sønn)", phone: "+4740000001" },
+  { name: "Selskapet vakt",    phone: "+4740000000" },
+];
+
+// Member's first name — shown in the greeting and footer
+const MEMBER_NAME = "Ingrid";
+
+// Bluetooth device name hint (partial match, case-insensitive)
+// e.g. "Oticon", "Phonak", "ReSound", "Widex", "Signia", "" = any device
+const BT_DEVICE_HINT = "";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════════════════
+
+const DAYS   = ["Søndag","Mandag","Tirsdag","Onsdag","Torsdag","Fredag","Lørdag"];
+const MONTHS = ["januar","februar","mars","april","mai","juni","juli","august","september","oktober","november","desember"];
+
+const pad  = n => String(n).padStart(2,'0');
+const mins = (h,m) => h*60+m;
+const fmt  = (h,m) => `kl. ${pad(h)}:${pad(m)}`;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SCHEDULE RENDER
+// ═══════════════════════════════════════════════════════════════════════════
+
+function computeState(now) {
+  const d = now.getDay();
+  const n = mins(now.getHours(), now.getMinutes());
+  const DURATION = 75;
+
+  const enriched = SESSIONS.map(s => {
+    const sm = mins(s.hour, s.minute);
+    if (s.day === d) {
+      if (n >= sm && n < sm + DURATION) return { ...s, state:'today-live' };
+      if (n < sm)                        return { ...s, state:'today-upcoming' };
+      return { ...s, state:'past' };
+    }
+    return { ...s, state: s.day > d ? 'upcoming' : 'past' };
+  });
+
+  const live    = enriched.find(s => s.state === 'today-live');
+  const nextUp  = enriched.find(s => s.state === 'today-upcoming');
+  const nextAny = enriched.find(s => s.state === 'upcoming');
+  const banner  = live || nextUp || nextAny || null;
+  const nextCard = !live && (nextUp || nextAny);
+
+  return {
+    enriched: nextCard
+      ? enriched.map(s => s === nextCard ? { ...s, isNext:true } : s)
+      : enriched,
+    banner, live
+  };
+}
+
+function render() {
+  const now = new Date();
+  const { enriched, banner, live } = computeState(now);
+
+  document.getElementById('js-day').textContent  = DAYS[now.getDay()];
+  document.getElementById('js-date').textContent = `${now.getDate()}. ${MONTHS[now.getMonth()]} ${now.getFullYear()}`;
+  document.getElementById('js-clock').textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+  // Personalised greeting — time-aware, shown large in header
+  const h = now.getHours();
+  const greet = h < 11 ? 'God morgen' : h < 17 ? 'God dag' : 'God kveld';
+  document.getElementById('js-greeting').innerHTML = `${greet}, <span class="name">${MEMBER_NAME}</span> 👋`;
+
+  // Banner
+  const bEl = document.getElementById('js-banner');
+  if (banner) {
+    bEl.className = 'today-banner' + (banner.state==='past' ? ' none' : '');
+    document.getElementById('js-banner-icon').textContent  = banner.icon;
+    document.getElementById('js-banner-label').textContent = live ? 'Pågår nå' : 'Neste aktivitet';
+    document.getElementById('js-banner-title').textContent = banner.title;
+    document.getElementById('js-banner-time').textContent  = live
+      ? `Startet ${fmt(banner.hour,banner.minute)} · Er du med?`
+      : `${DAYS[banner.day]} ${fmt(banner.hour,banner.minute)}`;
+  } else {
+    bEl.className = 'today-banner none';
+    document.getElementById('js-banner-icon').textContent  = '✅';
+    document.getElementById('js-banner-label').textContent = 'Denne uken';
+    document.getElementById('js-banner-title').textContent = 'Alle aktiviteter er gjennomført!';
+    document.getElementById('js-banner-time').textContent  = 'Nytt program kommer på søndag kveld';
+  }
+
+  // Cards
+  const grid = document.getElementById('js-schedule');
+  grid.innerHTML = '';
+  enriched.forEach(s => {
+    const isToday = s.state==='today-live' || s.state==='today-upcoming';
+    const isPast  = s.state==='past';
+    let cls = 'session-card' + (isToday?' is-today':'') + (isPast?' is-past':'') + (s.isNext?' is-next':'');
+    let badge = '';
+    if (s.state==='today-live')      badge = `<span class="card-badge badge-today">● Pågår nå</span>`;
+    else if (s.state==='today-upcoming') badge = `<span class="card-badge badge-today">I dag</span>`;
+    else if (s.isNext)               badge = `<span class="card-badge badge-next">Neste</span>`;
+    else if (isPast)                 badge = `<span class="card-badge badge-done">Gjennomført</span>`;
+    grid.innerHTML += `<div class="${cls}">
+      <div class="card-day">${DAYS[s.day]}</div>
+      <div class="card-icon">${s.icon}</div>
+      <div class="card-title">${s.title}</div>
+      <div class="card-time">${fmt(s.hour,s.minute)}</div>
+      <div class="card-desc">${s.desc}</div>
+      ${badge}
+    </div>`;
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BLUETOOTH / HEARING AID
+// ═══════════════════════════════════════════════════════════════════════════
+
+let btState = 'idle'; // idle | searching | connected
+let btDevice = null;
+let btScanTimer = null;
+
+async function handleBluetooth() {
+  if (btState === 'connected') { disconnectBt(); return; }
+  if (btState === 'searching') return;
+
+  const card = document.getElementById('js-bt-card');
+  const sub  = document.getElementById('js-bt-sub');
+
+  // Check Web Bluetooth support
+  if (!navigator.bluetooth) {
+    sub.textContent = 'Bluetooth støttes ikke i denne nettleseren. Bruk Safari på iPad.';
+    return;
+  }
+
+  btState = 'searching';
+  card.className = 'bt-card searching';
+  sub.textContent = 'Søker etter enheter';
+  card.querySelector('.scan-dots').style.display = 'inline';
+
+  try {
+    // Request Bluetooth device — tries to find hearing aids and headsets
+    // Accepts any device for maximum compatibility
+    const filters = BT_DEVICE_HINT
+      ? [{ name: BT_DEVICE_HINT }]
+      : [
+          { services: ['battery_service'] },           // most hearing aids expose this
+          { services: ['0000fe59-0000-1000-8000-00805f9b34fb'] }, // Nordic UART (common)
+        ];
+
+    btDevice = await navigator.bluetooth.requestDevice({
+      filters,
+      optionalServices: ['battery_service', 'device_information'],
+      acceptAllDevices: !BT_DEVICE_HINT && filters.length === 0,
+    }).catch(() => {
+      // Fall back to acceptAllDevices if filters fail
+      return navigator.bluetooth.requestDevice({ acceptAllDevices: true });
+    });
+
+    const server = await btDevice.gatt.connect();
+    btDevice.addEventListener('gattserverdisconnected', onBtDisconnected);
+
+    btState = 'connected';
+    card.className = 'bt-card bt-connected';
+    card.querySelector('.scan-dots').style.display = 'none';
+    sub.innerHTML = `✓ Tilkoblet<br><span style="opacity:.75">${btDevice.name || 'Ukjent enhet'}</span><br><span style="font-size:11px;opacity:.6">Trykk for å koble fra</span>`;
+    card.querySelector('.bt-card-icon').textContent = '✅';
+
+  } catch (err) {
+    btState = 'idle';
+    card.className = 'bt-card';
+    card.querySelector('.scan-dots').style.display = 'none';
+    if (err.name === 'NotFoundError' || err.message.includes('cancelled')) {
+      sub.textContent = 'Ingen enhet valgt.\nTrykk for å prøve igjen.';
+    } else {
+      sub.textContent = 'Kunne ikke koble til.\nTrykk for å prøve igjen.';
+    }
+    card.querySelector('.bt-card-icon').textContent = '🦻';
+  }
+}
+
+function onBtDisconnected() {
+  btState = 'idle'; btDevice = null;
+  const card = document.getElementById('js-bt-card');
+  card.className = 'bt-card';
+  card.querySelector('.bt-card-icon').textContent = '🦻';
+  document.getElementById('js-bt-sub').textContent = 'Koblet fra.\nTrykk for å koble til igjen.';
+}
+
+async function disconnectBt() {
+  if (btDevice && btDevice.gatt.connected) { btDevice.gatt.disconnect(); }
+  onBtDisconnected();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// EMERGENCY / SOS
+// ═══════════════════════════════════════════════════════════════════════════
+
+let sosTimer = null;
+let sosCount = 5;
+
+function showSosModal() {
+  document.getElementById('js-overlay').classList.add('active');
+  setStage('confirm');
+}
+
+function closeSosModal() {
+  clearInterval(sosTimer);
+  sosTimer = null; sosCount = 5;
+  document.getElementById('js-overlay').classList.remove('active');
+  setStage('confirm');
+  // reset confirm button
+  document.getElementById('js-sos-confirm').disabled = false;
+  document.getElementById('js-countdown').textContent = '5';
+  document.getElementById('js-ring').style.background = 'conic-gradient(var(--red) 0%, #fde8e6 0%)';
+}
+
+function setStage(name) {
+  ['confirm','sending','sent'].forEach(s => {
+    document.getElementById(`js-modal-stage-${s}`).style.display = s===name ? '' : 'none';
+  });
+  const modal = document.getElementById('js-modal');
+  modal.className = 'modal' + (name !== 'confirm' ? ` ${name}-stage` : ' confirm-stage');
+}
+
+function startSosCountdown() {
+  const btn = document.getElementById('js-sos-confirm');
+  btn.disabled = true;
+  btn.textContent = 'Sender…';
+
+  sosCount = 5;
+  updateRing(sosCount);
+
+  sosTimer = setInterval(() => {
+    sosCount--;
+    updateRing(sosCount);
+    document.getElementById('js-countdown').textContent = sosCount;
+    if (sosCount <= 0) {
+      clearInterval(sosTimer);
+      sosTimer = null;
+      dispatchEmergency();
+    }
+  }, 1000);
+}
+
+function updateRing(remaining) {
+  const pct = ((5 - remaining) / 5) * 100;
+  document.getElementById('js-ring').style.background =
+    `conic-gradient(var(--red) ${pct}%, #fde8e6 ${pct}%)`;
+}
+
+function dispatchEmergency() {
+  setStage('sending');
+
+  // ── INTEGRATION POINT ──────────────────────────────────────────────────
+  // Replace the setTimeout below with your real notification logic:
+  //
+  // Option A — Twilio SMS (needs backend endpoint):
+  //   fetch('/api/sos', { method:'POST', body: JSON.stringify({ member: 'Ingrid', contacts: EMERGENCY_CONTACTS }) })
+  //
+  // Option B — mailto fallback (opens mail app):
+  //   window.location.href = `mailto:${EMERGENCY_CONTACTS.map(c=>c.phone).join(',')}?subject=NØDHJELP&body=Ingrid trenger hjelp nå`;
+  //
+  // Option C — tel: direct call to first contact:
+  //   window.location.href = `tel:${EMERGENCY_CONTACTS[0].phone}`;
+  //
+  // For the MVP, Option C (direct call) is the most reliable with zero backend needed.
+  // ───────────────────────────────────────────────────────────────────────
+
+  console.log('[SOS] Emergency dispatched to:', EMERGENCY_CONTACTS);
+
+  // Simulate sending (replace with real call above for production)
+  setTimeout(() => { setStage('sent'); }, 2200);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CLOCK TICK
+// ═══════════════════════════════════════════════════════════════════════════
+
+render();
+setInterval(() => {
+  const now = new Date();
+  document.getElementById('js-clock').textContent = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  if (now.getSeconds() < 31) render();
+}, 30000);
+
+// Close overlay on background tap
+document.getElementById('js-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('js-overlay')) closeSosModal();
+});
+</script>
+</body>
+</html>
