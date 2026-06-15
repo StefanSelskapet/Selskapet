@@ -442,12 +442,12 @@
 <script>
 // ═══════════════════════════════════════════════════════════════════════
 // CONFIG — URL params override defaults
-// Usage: ?name=Bjorn&emergency=+4741234567&helper=+4740000000
+// Usage: ?name=Bjorn&emergency=+4741234567&helper=+4743177172
 // ═══════════════════════════════════════════════════════════════════════
 const params = new URLSearchParams(window.location.search);
-const MEMBER_NAME      = params.get('name')      || "Ingrid";
+const MEMBER_NAME      = params.get('name')      || "Stefan";
 const EMERGENCY_NUMBER = params.get('emergency') || "+4740000001";
-const HELPER_NUMBER    = params.get('helper')    || "+4740000000";
+const HELPER_NUMBER    = params.get('helper')    || "+4741477172";
 const HELP_DISPLAY     = params.get('helpnum')   || "400 00 000";
 
 document.getElementById('js-help-number').textContent = HELP_DISPLAY;
